@@ -56,7 +56,7 @@ def download_video():
     try:
         # yt-dlp options
         ydl_opts = {
-            'format': 'bestvideo[height<=1080]+bestaudio/best',
+            'format': 'bestvideo[height<=720]+bestaudio/best',
             'merge_output_format': 'mp4',
             'outtmpl': f'{DOWNLOAD_FOLDER}/%(title)s.%(ext)s'
         }
@@ -84,3 +84,4 @@ def download_video():
 # ----------------------------
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=10000)
+
