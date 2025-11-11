@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HD Video Downloader</title>
+    <style>
+        :root {
+            --bg-1: #0f1724;
+            --bg-2: #071223;
+            --card: #1c1c1c;
+            --accent: #007bff;
+            --muted: #9aa7b2;
+            --text: #e6eef6;
+        }
+
+        html,
+        body {
+            height: 100%;
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            min-height: 100vh;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            background: linear-gradient(135deg, var(--bg-1), var(--bg-2));
+            color: var(--text);
+        }
+
+        /* Header */
+        header.site-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 14px 20px;
+            background: rgba(255, 255, 255, 0.02);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        }
+
+        .site-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .site-owner {
+            font-size: 0.95rem;
+            color: var(--muted);
+        }
+
+        /* Center area */
+        .main-content {
+            display: flex;
+            flex: 1;
+            align-items: center;
+            justify-content: center;
+            padding: 28px;
+        }
+
+        form {
+            background: var(--card);
+            padding: 22px;
+            border-radius: 12px;
+            text-align: center;
+            width: 100%;
+            max-width: 560px;
+            box-shadow: 0 8px 30px rgba(2, 6, 23, 0.6);
+        }
+
+        input {
+            width: calc(100% - 22px);
+            padding: 10px;
+            border-radius: 8px;
+            border: none;
+            margin-top: 12px;
+            background: #0f1722;
+            color: var(--text);
+        }
+
+        button {
+            margin-top: 18px;
+            padding: 10px 20px;
+            background-color: var(--accent);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        /* Footer */
+        footer.site-footer {
+            padding: 12px 20px;
+            text-align: center;
+            font-size: 0.9rem;
+            color: var(--muted);
+            border-top: 1px solid rgba(255, 255, 255, 0.02);
+            background: rgba(0, 0, 0, 0.02);
+        }
+
+        @media (max-width:600px) {
+            .site-title {
+                font-size: 1rem
+            }
+
+            form {
+                padding: 16px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header class="site-header">
+        <h1 class="site-title">HD Video Downloader</h1>
+        <!-- I inferred your name as "Umair" from the workspace; change if needed -->
+        <div class="site-owner">Made by Umair</div>
+    </header>
+
+    <main class="main-content">
+        <form id="downloadForm">
+            <h2>📥 YouTube HD Downloader</h2>
+            <input type="text" id="url" name="url" placeholder="Enter YouTube video URL" required>
+            <br>
+            <button type="submit" id="downloadBtn">Download 1080p</button>
+            <p id="statusMsg" style="margin-top:10px;color:#9aa7b2;"></p>
+
+            <div id="videoInfo" style="display:none;margin-top:15px;text-align:center;">
+                <img id="thumb" src="" width="280" style="border-radius:10px;"><br>
+                <h3 id="title"></h3>
+                <p id="details"></p>
+            </div>
+        </form>
+
+        <script>
+            const form = document.getElementById("downloadForm");
+            const btn = document.getElementById("downloadBtn");
+            const msg = document.getElementById("statusMsg");
+            const infoBox = document.getElementById("videoInfo");
+
+            form.addEventListener("submit", async (e) => {
+                e.preventDefault();
+                const url = document.getElementById("url").value.trim();
+                if (!url) return;
+
+                btn.disabled = true;
+                msg.innerText = "Fetching video info...";
+                infoBox.style.display = "none";
+
+                try {
+                    // Step 1: Fetch video info
+                    const infoRes = await fetch("/info", {
+                        method: "POST",
+                        body: new URLSearchParams({ url })
+                    });
+                    const info = await infoRes.json();
+
+                    if (info.error) throw new Error(info.error);
+
+                    // Show video info
+                    infoBox.style.display = "block";
+                    document.getElementById("thumb").src = info.thumbnail;
+                    document.getElementById("title").innerText = info.title;
+                    document.getElementById("details").innerText =
+                        `${info.uploader || "Unknown"} • Duration: ${Math.floor(info.duration / 60)}m ${info.duration % 60}s`;
+
+                    msg.innerText = "Downloading video... Please wait ⏳";
+
+                    // Step 2: Start download
+                    const res = await fetch("/download", {
+                        method: "POST",
+                        body: new URLSearchParams({ url })
+                    });
+
+                    if (!res.ok) throw new Error("Download failed");
+
+                    const blob = await res.blob();
+                    const link = document.createElement("a");
+                    link.href = window.URL.createObjectURL(blob);
+                    link.download = `${info.title || "video"}.mp4`;
+                    link.click();
+
+                    msg.innerText = "✅ Download Complete!";
+                } catch (err) {
+                    msg.innerText = "❌ Error: " + err.message;
+                } finally {
+                    btn.disabled = false;
+                }
+            });
+        </script>
+
+    </main>
+
+    <footer class="site-footer">© 2025 Umair — Built with Love❤️</footer>
+
+</body>
+
+</html>
