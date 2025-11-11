@@ -41,7 +41,7 @@ def get_info():
         return jsonify(data)
 
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': f'⚠️ Unable to fetch video info: {str(e)}'}), 500
 
 
 # ----------------------------
@@ -61,21 +61,26 @@ def download_video():
             'outtmpl': f'{DOWNLOAD_FOLDER}/%(title)s.%(ext)s'
         }
 
-        # Download the video
+        # Try downloading the video
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=True)
+            try:
+                info = ydl.extract_info(url, download=True)
+            except Exception as e:
+                return jsonify({
+                    'error': '❌ Unable to download this video (may need login or age verification).'
+                }), 400
+
             filename = ydl.prepare_filename(info).rsplit('.', 1)[0] + ".mp4"
 
         # Return the file for download
         return send_file(filename, as_attachment=True)
 
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': f'⚠️ Unexpected error: {str(e)}'}), 500
 
 
 # ----------------------------
 # Run Flask App
 # ----------------------------
 if __name__ == '__main__':
-    # You can change port if needed
     app.run(host='0.0.0.0', port=10000)
